@@ -23,11 +23,14 @@ public class MainActivity extends Activity {
   super.onCreate(b);
   LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(32,40,32,32);
   TextView info = new TextView(this);
-  info.setText("ChatGPTHeadset 0.2 — управление голосом и медиакнопками. Включите специальные возможности и доступ к уведомлениям.");
+  info.setText("ChatGPTHeadset 0.3 — управление голосом и медиакнопками. Включите специальные возможности и доступ к уведомлениям.");
   info.setTextSize(18); root.addView(info);
   Button enable = new Button(this); enable.setText("Open accessibility settings");
   enable.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))); root.addView(enable);
   Button media = new Button(this); media.setText("Доступ к уведомлениям"); media.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))); root.addView(media);
+  Button learn=new Button(this); learn.setText("Обучить команду"); root.addView(learn);
+  learn.setOnClickListener(v->{getSharedPreferences("controls",0).edit().putBoolean("learning",true).apply();log.setText("Выполни комбинацию. Пауза 700 мс завершает запись.");});
+  Button cancel=new Button(this);cancel.setText("Отменить обучение");root.addView(cancel);cancel.setOnClickListener(v->{getSharedPreferences("controls",0).edit().putBoolean("learning",false).apply();log.setText("Обучение отменено");});
   log = new TextView(this); log.setText("No headset key events captured yet."); log.setTextSize(17); root.addView(log);
   setContentView(root);
  }
