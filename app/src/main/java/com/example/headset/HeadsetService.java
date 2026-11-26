@@ -57,18 +57,40 @@ public class HeadsetService extends AccessibilityService {
  handler.postDelayed(()->attempt(),1500);
  handler.postDelayed(()->{if(pending){pending=false;log("Кнопка голосового режима не найдена");}},5000);
  }
+ private final ArrayList<String> sequence=new ArrayList<>();
+ private final Map<Integer,Long> downs=new HashMap<>();
+ private final Set<Integer> captured=new HashSet<>();
+ private final Runnable finish=()->{
+ if(sequence.isEmpty())return;
+ String pattern=android.text.TextUtils.join(",",sequence);sequence.clear();
+ android.content.SharedPreferences prefs=getSharedPreferences("controls",0);
+ if(prefs.getBoolean("learning",false)){
+ prefs.edit().putString("pattern",pattern).putBoolean("learning",false).apply();log("Команда сохранена: "+pattern);
+ }else if(pattern.equals(prefs.getString("pattern","87:S"))){toggle();}
+ else log("Не совпало: "+pattern);
+ };
  @Override protected boolean onKeyEvent(KeyEvent e){
  int k=e.getKeyCode();
- if(k!=KeyEvent.KEYCODE_HEADSETHOOK&&k!=KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE&&k!=KeyEvent.KEYCODE_MEDIA_NEXT)return false;
- if(e.getAction()==KeyEvent.ACTION_UP)return consumed;
- if(e.getRepeatCount()!=0)return consumed;
- boolean voice=find(root(),true)!=null;
- if(!voice&&(active(TRAIN)||active(MUSIC))){consumed=false;last=0;return false;}
- consumed=true;
- long now=SystemClock.elapsedRealtime();
- // Earbuds may encode double tap as MEDIA_NEXT; other devices send two play/pause events.
- if(k==KeyEvent.KEYCODE_MEDIA_NEXT||(last!=0&&now-last<=650)){last=0;toggle();}
- else{last=now;log("Ожидание второго нажатия");}
- return true;
+ if(k==KeyEvent.KEYCODE_POWER||k==KeyEvent.KEYCODE_HOME||k==KeyEvent.KEYCODE_BACK||k==KeyEvent.KEYCODE_SLEEP||k==KeyEvent.KEYCODE_WAKEUP)return false;
+ android.content.SharedPreferences prefs=getSharedPreferences("controls",0);
+ boolean learning=prefs.getBoolean("learning",false);
+ String pattern=prefs.getString("pattern","87:S");
+ if(e.getAction()==KeyEvent.ACTION_DOWN){
+ if(e.getRepeatCount()!=0)return captured.contains(k);
+ if(!learning){
+ boolean relevant=false;
+ for(String token:pattern.split(","))if(token.startsWith(k+":"))relevant=true;
+ if(!relevant)return false;
+ if(find(root(),true)==null&&(active(TRAIN)||active(MUSIC)))return false;
+ }
+ handler.removeCallbacks(finish);
+ captured.add(k);downs.put(k,e.getEventTime());return true;
+ }
+ if(e.getAction()==KeyEvent.ACTION_UP&&captured.remove(k)){
+ Long start=downs.remove(k);
+ sequence.add(k+":"+(start!=null&&e.getEventTime()-start>=600?"L":"S"));
+ handler.removeCallbacks(finish);handler.postDelayed(finish,700);return true;
+ }
+ return false;
  }
 }
