@@ -23,13 +23,14 @@ public class MainActivity extends Activity {
   super.onCreate(b);
   LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(32,40,32,32);
   TextView info = new TextView(this);
-  info.setText("HONOR Earbuds 4 — gesture diagnostics\n\nEnable ChatGPT Headset accessibility service, return here and test double/triple taps on either earbud. Yandex Music controls should remain functional.\n\nThis prototype does NOT start ChatGPT Voice.");
+  info.setText("ChatGPTHeadset 0.2 — управление голосом и медиакнопками. Включите специальные возможности и доступ к уведомлениям.");
   info.setTextSize(18); root.addView(info);
   Button enable = new Button(this); enable.setText("Open accessibility settings");
   enable.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))); root.addView(enable);
+  Button media = new Button(this); media.setText("Доступ к уведомлениям"); media.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))); root.addView(media);
   log = new TextView(this); log.setText("No headset key events captured yet."); log.setTextSize(17); root.addView(log);
   setContentView(root);
  }
- @Override protected void onStart() { super.onStart(); IntentFilter filter = new IntentFilter(HeadsetService.ACTION_KEY); registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED); }
+ @Override protected void onStart() { super.onStart(); IntentFilter filter = new IntentFilter(HeadsetService.ACTION_KEY); if(android.os.Build.VERSION.SDK_INT>=33) registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED); else registerReceiver(receiver, filter); }
  @Override protected void onStop() { unregisterReceiver(receiver); super.onStop(); }
 }
